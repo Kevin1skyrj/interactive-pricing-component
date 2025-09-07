@@ -60,11 +60,11 @@ function PricingSlider({ value, onChange }: { value: number; onChange: (value: n
   }, [setFromClientX]);
 
   return (
-    <div className="relative w-full mb-10 select-none">
+  <div className="relative w-full mb-8 md:mb-10 select-none">
       {/* Track */}
       <div
         ref={trackRef}
-        className="relative h-2 rounded-full bg-[hsl(224,65%,95%)] cursor-pointer"
+  className="relative h-2 rounded-full bg-[hsl(224,65%,95%)] cursor-pointer"
         onClick={(e) => setFromClientX((e as React.MouseEvent).clientX)}
       >
         {/* Fill */}
@@ -125,40 +125,37 @@ export default function Home() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Background Pattern */}
-      <div className="absolute top-0 left-0 w-full">
-        <Image
-          src="/images/bg-pattern.svg"
-          alt="Background pattern"
-          width={1440}
-          height={449}
-          className="w-full h-auto object-cover"
-          priority
-        />
-      </div>
+      {/* Background Pattern (responsive, exact look for mobile/desktop) */}
+      <div
+        className="absolute inset-x-0 top-0 bg-[url('/images/bg-pattern.svg')] bg-no-repeat bg-top bg-[length:140%_auto] h-[70vw] min-h-[320px] md:bg-[length:100%_auto] md:h-[31.2vw] md:min-h-[220px]"
+        aria-hidden
+      />
 
-      {/* Pattern Circles - precise placement (mobile + desktop) */}
-      <div className="absolute right-6 -top-2 w-28 h-28 opacity-60 md:opacity-60 md:right-24 md:-top-6 md:w-36 md:h-36 lg:right-32 lg:-top-8 lg:w-40 lg:h-40">
-        <Image
-          src="/images/pattern-circles.svg"
-          alt="Pattern circles"
-          width={146}
-          height={145}
-          className="w-full h-full object-contain"
-        />
-      </div>
+  {/* Pattern circles will be rendered inside the header to align center behind text */}
 
       {/* Main Content */}
-      <div className="relative z-10 flex flex-col items-center pt-16 md:pt-24 pb-20 px-6">
+  <div className="relative z-10 flex flex-col items-center pt-16 md:pt-24 pb-20 px-5 md:px-6">
         {/* Header */}
-        <div className="text-center mb-12 md:mb-16 max-w-md">
+        <div className="relative text-center mb-12 md:mb-16 max-w-md">
+          {/* Centered pattern circles behind the title (mobile + desktop) */}
+          <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 -top-4 md:-top-6 -z-10 w-36 h-36 md:w-36 md:h-36 lg:w-40 lg:h-40 opacity-60">
+            <Image
+              src="/images/pattern-circles.svg"
+              alt=""
+              aria-hidden
+              width={146}
+              height={145}
+              className="w-full h-full object-contain"
+              priority
+            />
+          </div>
           <h1 
-            className="text-xl md:text-2xl lg:text-3xl font-extrabold mb-2 md:mb-4 leading-tight text-[hsl(227,35%,25%)]"
+            className="text-[26px] md:text-[28px] lg:text-[32px] font-extrabold mb-2 md:mb-3 leading-tight text-[hsl(227,35%,25%)]"
           >
             Simple, traffic-based pricing
           </h1>
           <div 
-            className="text-sm md:text-base leading-relaxed text-[hsl(225,20%,60%)]"
+            className="text-[13.5px] md:text-[15px] leading-relaxed text-[hsl(225,20%,60%)]"
           >
             <p>Sign-up for our 30-day trial.</p>
             <p>No credit card required.</p>
@@ -166,7 +163,7 @@ export default function Home() {
         </div>
 
         {/* Pricing Card */}
-        <div className="bg-white rounded-xl shadow-[0_40px_60px_rgba(0,0,0,0.06)] w-full max-w-sm md:max-w-xl overflow-hidden">
+  <div className="bg-white rounded-[14px] shadow-[0_30px_60px_rgba(0,0,0,0.08)] w-full max-w-[560px] md:max-w-[700px] overflow-hidden">
           {/* Top Section with Pageviews, Slider, and Price */}
           <div className="px-6 md:px-10 lg:px-12 pt-8 md:pt-10 pb-8 md:pb-10">
             {/* Mobile Layout - Stacked */}
@@ -183,7 +180,7 @@ export default function Home() {
               
               {/* Price */}
               <div className="text-center mb-10">
-                <span className="text-4xl font-extrabold text-[hsl(227,35%,25%)]">
+                <span className="text-[44px] leading-none font-extrabold text-[hsl(227,35%,25%)]">
                   ${displayPrice}
                 </span>
                 <span className="text-sm ml-2 text-[hsl(225,20%,60%)]">
@@ -218,7 +215,7 @@ export default function Home() {
               <BillingToggle isYearly={isYearly} onChange={() => setIsYearly(!isYearly)} />
               <span className="text-[hsl(225,20%,60%)]">Yearly Billing</span>
               <span className="px-2 py-1 rounded-full text-xs font-extrabold ml-2 bg-[hsl(14,92%,95%)] text-[hsl(15,100%,70%)]">
-                25% discount
+                -25%
               </span>
             </div>
           </div>
@@ -230,8 +227,8 @@ export default function Home() {
           <div className="px-6 md:px-10 lg:px-12 py-8 md:py-10">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
               {/* Features */}
-              <ul className="space-y-3 text-center md:text-left">
-                <li className="flex items-center justify-center md:justify-start text-xs md:text-sm text-[hsl(225,20%,60%)]">
+              <ul className="space-y-3 text-left">
+                <li className="flex items-center text-xs md:text-sm text-[hsl(225,20%,60%)]">
                   <Image
                     src="/images/icon-check.svg"
                     alt="Check"
@@ -241,7 +238,7 @@ export default function Home() {
                   />
                   Unlimited websites
                 </li>
-                <li className="flex items-center justify-center md:justify-start text-xs md:text-sm text-[hsl(225,20%,60%)]">
+                <li className="flex items-center text-xs md:text-sm text-[hsl(225,20%,60%)]">
                   <Image
                     src="/images/icon-check.svg"
                     alt="Check"
@@ -251,7 +248,7 @@ export default function Home() {
                   />
                   100% data ownership
                 </li>
-                <li className="flex items-center justify-center md:justify-start text-xs md:text-sm text-[hsl(225,20%,60%)]">
+                <li className="flex items-center text-xs md:text-sm text-[hsl(225,20%,60%)]">
                   <Image
                     src="/images/icon-check.svg"
                     alt="Check"
@@ -265,7 +262,7 @@ export default function Home() {
 
               {/* CTA Button */}
               <button 
-                className="px-12 py-3 rounded-full text-xs md:text-sm font-extrabold hover:opacity-90 transition-opacity duration-200 whitespace-nowrap bg-[hsl(227,35%,25%)] text-[hsl(226,100%,87%)]"
+                className="w-[80%] md:w-auto px-8 md:px-12 py-4 md:py-3 rounded-full text-sm font-extrabold hover:opacity-90 transition-opacity duration-200 whitespace-nowrap bg-[hsl(227,35%,25%)] text-[hsl(226,100%,87%)] mx-auto md:mx-0"
               >
                 Start my trial
               </button>
