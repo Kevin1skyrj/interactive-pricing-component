@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 
 const PRICING_DATA = [
@@ -13,66 +13,83 @@ const PRICING_DATA = [
 
 // Custom Slider Component
 function PricingSlider({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+  const trackRef = useRef<HTMLDivElement | null>(null);
+
+  const percent = useMemo(() => (value / 4) * 100, [value]);
+
+  const setFromClientX = useCallback(
+    (clientX: number) => {
+      const track = trackRef.current;
+      if (!track) return;
+      const rect = track.getBoundingClientRect();
+      const p = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      onChange(Math.round(p * 4));
+    },
+    [onChange]
+  );
+
+  useEffect(() => {
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches[0]) setFromClientX(e.touches[0].clientX);
+    };
+    const handleMouseMove = (e: MouseEvent) => setFromClientX(e.clientX);
+    const handleUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleUp);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleUp);
+    };
+    const handleDown = (e: MouseEvent | TouchEvent) => {
+      if (e instanceof MouseEvent) {
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleUp);
+      } else {
+        document.addEventListener("touchmove", handleTouchMove, { passive: true });
+        document.addEventListener("touchend", handleUp);
+      }
+    };
+    const el = trackRef.current;
+    if (!el) return;
+    el.addEventListener("mousedown", (e) => handleDown(e));
+    el.addEventListener("touchstart", (e) => handleDown(e), { passive: true });
+    return () => {
+      el?.removeEventListener("mousedown", (e) => handleDown(e as unknown as MouseEvent));
+      el?.removeEventListener("touchstart", (e) => handleDown(e as unknown as TouchEvent));
+      handleUp();
+    };
+  }, [setFromClientX]);
+
   return (
-    <div className="relative w-full h-2 mb-10">
-      {/* Slider track */}
-      <div className="absolute inset-0 rounded-full overflow-hidden" style={{ backgroundColor: 'hsl(224, 65%, 95%)' }}>
-        {/* Progress fill */}
-        <div 
-          className="h-full rounded-full transition-all duration-200"
-          style={{ 
-            width: `${(value / 4) * 100}%`,
-            backgroundColor: 'hsl(174, 77%, 80%)'
-          }}
-        />
-      </div>
-      
-      {/* Slider thumb */}
-      <div 
-        className="absolute top-1/2 transform -translate-y-1/2 w-10 h-10 rounded-full cursor-pointer transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl"
-        style={{ 
-          left: `${(value / 4) * 100}%`,
-          transform: 'translate(-50%, -50%)',
-          backgroundColor: 'hsl(174, 86%, 45%)',
-          boxShadow: '0 15px 30px rgba(0, 255, 231, 0.6)'
-        }}
-        onMouseDown={(e) => {
-          const slider = e.currentTarget.parentElement;
-          if (!slider) return;
-          
-          const handleMouseMove = (event: MouseEvent) => {
-            const rect = slider.getBoundingClientRect();
-            const percentage = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-            onChange(Math.round(percentage * 4));
-          };
-          
-          const handleMouseUp = () => {
-            document.removeEventListener('mousemove', handleMouseMove);
-            document.removeEventListener('mouseup', handleMouseUp);
-          };
-          
-          document.addEventListener('mousemove', handleMouseMove);
-          document.addEventListener('mouseup', handleMouseUp);
-        }}
+    <div className="relative w-full mb-10 select-none">
+      {/* Track */}
+      <div
+        ref={trackRef}
+        className="relative h-2 rounded-full bg-[hsl(224,65%,95%)] cursor-pointer"
+        onClick={(e) => setFromClientX((e as React.MouseEvent).clientX)}
       >
-        <Image
-          src="/images/icon-slider.svg"
-          alt="Slider"
-          width={22}
-          height={13}
-          className="pointer-events-none"
+        {/* Fill */}
+        <div
+          className="h-2 rounded-full bg-[hsl(174,77%,80%)] transition-[width] duration-200"
+          style={{ width: `${percent}%` }}
         />
+
+        {/* Thumb */}
+        <div
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full grid place-items-center shadow-[0_15px_30px_rgba(0,255,231,0.6)] bg-[hsl(174,86%,45%)] hover:bg-[hsl(174,86%,40%)] active:scale-95 transition-all"
+          style={{ left: `${percent}%` }}
+          role="slider"
+          aria-valuemin={0}
+          aria-valuemax={4}
+          aria-valuenow={value}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft") onChange(Math.max(0, value - 1));
+            if (e.key === "ArrowRight") onChange(Math.min(4, value + 1));
+          }}
+        >
+          <Image src="/images/icon-slider.svg" alt="Slider" width={22} height={13} />
+        </div>
       </div>
-      
-      {/* Hidden input for accessibility */}
-      <input
-        type="range"
-        min="0"
-        max="4"
-        value={value}
-        onChange={(e) => onChange(parseInt(e.target.value))}
-        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-      />
     </div>
   );
 }
@@ -82,14 +99,16 @@ function BillingToggle({ isYearly, onChange }: { isYearly: boolean; onChange: ()
   return (
     <button
       onClick={onChange}
-      className="relative w-11 h-5 rounded-full transition-colors duration-200 focus:outline-none"
-      style={{ backgroundColor: isYearly ? 'hsl(174, 86%, 45%)' : 'hsl(223, 50%, 87%)' }}
+      className={`relative w-11 h-5 rounded-full transition-colors duration-200 focus:outline-none ${
+        isYearly ? "bg-[hsl(174,86%,45%)]" : "bg-[hsl(223,50%,87%)]"
+      }`}
+      aria-pressed={isYearly}
+      aria-label="Toggle yearly billing"
     >
       <div
-        className="absolute top-1 w-3 h-3 bg-white rounded-full transition-transform duration-200"
-        style={{
-          transform: isYearly ? 'translateX(24px)' : 'translateX(4px)'
-        }}
+        className={`absolute top-1 size-3 bg-white rounded-full transition-transform duration-200 ${
+          isYearly ? "translate-x-[24px]" : "translate-x-1"
+        }`}
       />
     </button>
   );
@@ -105,10 +124,7 @@ export default function Home() {
     : currentPricing.price.toFixed(2);
 
   return (
-    <div 
-      className="min-h-screen relative overflow-hidden font-manrope"
-      style={{ backgroundColor: 'hsl(230, 100%, 99%)' }}
-    >
+    <div className="min-h-screen relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute top-0 left-0 w-full">
         <Image
@@ -121,8 +137,8 @@ export default function Home() {
         />
       </div>
 
-      {/* Pattern Circles - positioned in top right */}
-      <div className="absolute top-12 right-12 w-36 h-36 opacity-50">
+      {/* Pattern Circles - precise placement (mobile + desktop) */}
+      <div className="absolute right-6 -top-2 w-28 h-28 opacity-60 md:opacity-60 md:right-24 md:-top-6 md:w-36 md:h-36 lg:right-32 lg:-top-8 lg:w-40 lg:h-40">
         <Image
           src="/images/pattern-circles.svg"
           alt="Pattern circles"
@@ -133,18 +149,16 @@ export default function Home() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 flex flex-col items-center pt-20 pb-20 px-6">
+      <div className="relative z-10 flex flex-col items-center pt-16 md:pt-24 pb-20 px-6">
         {/* Header */}
-        <div className="text-center mb-16 max-w-md">
+        <div className="text-center mb-12 md:mb-16 max-w-md">
           <h1 
-            className="text-xl md:text-2xl font-extrabold mb-3 leading-tight"
-            style={{ color: 'hsl(227, 35%, 25%)' }}
+            className="text-xl md:text-2xl lg:text-3xl font-extrabold mb-2 md:mb-4 leading-tight text-[hsl(227,35%,25%)]"
           >
             Simple, traffic-based pricing
           </h1>
           <div 
-            className="text-sm leading-relaxed"
-            style={{ color: 'hsl(225, 20%, 60%)' }}
+            className="text-sm md:text-base leading-relaxed text-[hsl(225,20%,60%)]"
           >
             <p>Sign-up for our 30-day trial.</p>
             <p>No credit card required.</p>
@@ -152,17 +166,14 @@ export default function Home() {
         </div>
 
         {/* Pricing Card */}
-        <div className="bg-white rounded-lg shadow-lg w-full max-w-lg overflow-hidden">
+        <div className="bg-white rounded-xl shadow-[0_40px_60px_rgba(0,0,0,0.06)] w-full max-w-sm md:max-w-xl overflow-hidden">
           {/* Top Section with Pageviews, Slider, and Price */}
-          <div className="px-6 md:px-12 pt-8 md:pt-12 pb-8">
+          <div className="px-6 md:px-10 lg:px-12 pt-8 md:pt-10 pb-8 md:pb-10">
             {/* Mobile Layout - Stacked */}
             <div className="block md:hidden">
               {/* Pageviews */}
-              <div className="text-center mb-8">
-                <span 
-                  className="text-xs font-extrabold tracking-widest uppercase"
-                  style={{ color: 'hsl(225, 20%, 60%)' }}
-                >
+              <div className="text-center mb-10">
+                <span className="text-xs font-extrabold tracking-[0.2em] uppercase text-[hsl(225,20%,60%)]">
                   {currentPricing.pageviews} Pageviews
                 </span>
               </div>
@@ -171,17 +182,11 @@ export default function Home() {
               <PricingSlider value={sliderValue} onChange={setSliderValue} />
               
               {/* Price */}
-              <div className="text-center mb-8">
-                <span 
-                  className="text-4xl font-extrabold"
-                  style={{ color: 'hsl(227, 35%, 25%)' }}
-                >
+              <div className="text-center mb-10">
+                <span className="text-4xl font-extrabold text-[hsl(227,35%,25%)]">
                   ${displayPrice}
                 </span>
-                <span 
-                  className="text-sm ml-2"
-                  style={{ color: 'hsl(225, 20%, 60%)' }}
-                >
+                <span className="text-sm ml-2 text-[hsl(225,20%,60%)]">
                   / {isYearly ? "year" : "month"}
                 </span>
               </div>
@@ -189,24 +194,15 @@ export default function Home() {
 
             {/* Desktop Layout - Side by side */}
             <div className="hidden md:block">
-              <div className="flex items-center justify-between mb-12">
-                <span 
-                  className="text-sm font-extrabold tracking-widest uppercase"
-                  style={{ color: 'hsl(225, 20%, 60%)' }}
-                >
+              <div className="flex items-center justify-between mb-12 lg:mb-16">
+                <span className="text-sm font-extrabold tracking-[0.2em] uppercase text-[hsl(225,20%,60%)]">
                   {currentPricing.pageviews} Pageviews
                 </span>
                 <div className="text-right">
-                  <span 
-                    className="text-4xl font-extrabold"
-                    style={{ color: 'hsl(227, 35%, 25%)' }}
-                  >
+                  <span className="text-4xl lg:text-5xl font-extrabold text-[hsl(227,35%,25%)]">
                     ${displayPrice}
                   </span>
-                  <span 
-                    className="text-sm ml-2"
-                    style={{ color: 'hsl(225, 20%, 60%)' }}
-                  >
+                  <span className="text-sm ml-2 text-[hsl(225,20%,60%)]">
                     / {isYearly ? "year" : "month"}
                   </span>
                 </div>
@@ -217,31 +213,25 @@ export default function Home() {
             </div>
 
             {/* Billing Toggle */}
-            <div className="flex items-center justify-center md:justify-end gap-3 text-xs">
-              <span style={{ color: 'hsl(225, 20%, 60%)' }}>Monthly Billing</span>
+            <div className="flex items-center justify-center md:justify-end gap-3 text-xs md:text-sm">
+              <span className="text-[hsl(225,20%,60%)]">Monthly Billing</span>
               <BillingToggle isYearly={isYearly} onChange={() => setIsYearly(!isYearly)} />
-              <span style={{ color: 'hsl(225, 20%, 60%)' }}>Yearly Billing</span>
-              <span 
-                className="px-2 py-1 rounded-full text-xs font-extrabold ml-2"
-                style={{ 
-                  backgroundColor: 'hsl(14, 92%, 95%)', 
-                  color: 'hsl(15, 100%, 70%)' 
-                }}
-              >
+              <span className="text-[hsl(225,20%,60%)]">Yearly Billing</span>
+              <span className="px-2 py-1 rounded-full text-xs font-extrabold ml-2 bg-[hsl(14,92%,95%)] text-[hsl(15,100%,70%)]">
                 25% discount
               </span>
             </div>
           </div>
 
           {/* Divider */}
-          <hr style={{ borderColor: 'hsl(224, 65%, 95%)' }} />
+          <hr className="border-[hsl(224,65%,95%)]" />
 
           {/* Bottom Section with Features and CTA */}
-          <div className="px-6 md:px-12 py-8 md:py-8">
+          <div className="px-6 md:px-10 lg:px-12 py-8 md:py-10">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
               {/* Features */}
               <ul className="space-y-3 text-center md:text-left">
-                <li className="flex items-center justify-center md:justify-start text-xs" style={{ color: 'hsl(225, 20%, 60%)' }}>
+                <li className="flex items-center justify-center md:justify-start text-xs md:text-sm text-[hsl(225,20%,60%)]">
                   <Image
                     src="/images/icon-check.svg"
                     alt="Check"
@@ -251,7 +241,7 @@ export default function Home() {
                   />
                   Unlimited websites
                 </li>
-                <li className="flex items-center justify-center md:justify-start text-xs" style={{ color: 'hsl(225, 20%, 60%)' }}>
+                <li className="flex items-center justify-center md:justify-start text-xs md:text-sm text-[hsl(225,20%,60%)]">
                   <Image
                     src="/images/icon-check.svg"
                     alt="Check"
@@ -261,7 +251,7 @@ export default function Home() {
                   />
                   100% data ownership
                 </li>
-                <li className="flex items-center justify-center md:justify-start text-xs" style={{ color: 'hsl(225, 20%, 60%)' }}>
+                <li className="flex items-center justify-center md:justify-start text-xs md:text-sm text-[hsl(225,20%,60%)]">
                   <Image
                     src="/images/icon-check.svg"
                     alt="Check"
@@ -275,11 +265,7 @@ export default function Home() {
 
               {/* CTA Button */}
               <button 
-                className="px-12 py-3 rounded-full text-xs font-extrabold hover:opacity-90 transition-opacity duration-200 whitespace-nowrap"
-                style={{ 
-                  backgroundColor: 'hsl(227, 35%, 25%)', 
-                  color: 'hsl(226, 100%, 87%)' 
-                }}
+                className="px-12 py-3 rounded-full text-xs md:text-sm font-extrabold hover:opacity-90 transition-opacity duration-200 whitespace-nowrap bg-[hsl(227,35%,25%)] text-[hsl(226,100%,87%)]"
               >
                 Start my trial
               </button>
