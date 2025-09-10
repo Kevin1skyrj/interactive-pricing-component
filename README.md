@@ -7,13 +7,13 @@ A modern, responsive pricing component built with **Next.js 15** and **TypeScrip
 <div align="center">
 
 ### 🌞 Light Mode
-![Light Mode](./screenshots/screenshot-light.png)
+![Light Mode](./public/screenshots/screenshot-light.png)
 
 ### 🌙 Dark Mode  
-![Dark Mode](./screenshots/screenshot-dark.png)
+![Dark Mode](./public/screenshots/screenshot-dark.png)
 
 ### 📱 Mobile Responsive
-![Mobile View](./screenshots/screenshot-mobile.png)
+![Mobile View](./public/screenshots/screenshot-mobile.png)
 
 </div>
 
