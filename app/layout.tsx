@@ -20,11 +20,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${manrope.className} antialiased bg-[hsl(230,100%,99%)] text-[hsl(227,35%,25%)]`}
+        className={`${manrope.className} antialiased`}
+        style={{
+          backgroundColor: 'var(--bg-color, #fefefe)',
+          color: 'var(--text-color, #1e293b)',
+          transition: 'background-color 0.3s ease, color 0.3s ease',
+        }}
       >
-        <div suppressHydrationWarning>
-          {children}
-        </div>
+        {children}
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import ThemeToggle from "./components/theme-toggle";
 
@@ -44,12 +44,11 @@ function PricingSlider({ value, onChange }: { value: number; onChange: (value: n
           }}
         />
         <div
-          className="absolute w-10 h-10 rounded-full grid place-items-center shadow-lg cursor-grab active:cursor-grabbing transition-all"
+          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-10 h-10 rounded-full grid place-items-center shadow-lg cursor-grab active:cursor-grabbing transition-all"
           style={{ 
             left: `${percent}%`,
-            top: '50%',
-            transform: 'translateX(-50%) translateY(-50%)',
             backgroundColor: 'var(--accent-color)',
+            transform: `translateX(-50%) translateY(-50%)`,
           }}
           role="slider"
           aria-valuemin={0}
@@ -95,18 +94,9 @@ export default function Home() {
   const [isYearly, setIsYearly] = useState(false);
 
   const currentPricing = PRICING_DATA[sliderValue];
-  
-  // Calculate prices - yearly should be higher (12 months), monthly is base price
-  const monthlyPrice = currentPricing.price;
-  const yearlyPrice = currentPricing.price * 12;
-  const yearlyDiscountedPrice = yearlyPrice * 0.75; // 25% discount on yearly
-  
   const displayPrice = isYearly 
-    ? yearlyDiscountedPrice.toFixed(0)
-    : monthlyPrice.toFixed(2);
-    
-  const displayPeriod = isYearly ? ' / year' : ' / month';
-  const originalYearlyPrice = isYearly ? yearlyPrice.toFixed(0) : null;
+    ? (currentPricing.price * 0.75).toFixed(2)
+    : currentPricing.price.toFixed(2);
 
   return (
     <div 
@@ -161,16 +151,8 @@ export default function Home() {
               </div>
               <PricingSlider value={sliderValue} onChange={setSliderValue} />
               <div className="text-center mb-8">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <span className="text-[32px] md:text-[40px] font-extrabold">${displayPrice}</span>
-                  <span className="text-sm" style={{ opacity: 0.7 }}>{displayPeriod}</span>
-                </div>
-                {isYearly && (
-                  <div className="text-xs" style={{ opacity: 0.6 }}>
-                    <span style={{ textDecoration: 'line-through' }}>${originalYearlyPrice} / year</span>
-                    <span className="ml-2 text-green-600 font-bold">Save 25%!</span>
-                  </div>
-                )}
+                <span className="text-[32px] md:text-[40px] font-extrabold">${displayPrice}</span>
+                <span className="text-sm" style={{ opacity: 0.7 }}> / month</span>
               </div>
             </div>
 
@@ -180,16 +162,8 @@ export default function Home() {
                 {currentPricing.pageviews} Pageviews
               </span>
               <div className="text-right">
-                <div className="flex items-center justify-end gap-2 mb-1">
-                  <span className="text-[32px] md:text-[40px] font-extrabold">${displayPrice}</span>
-                  <span className="text-sm" style={{ opacity: 0.7 }}>{displayPeriod}</span>
-                </div>
-                {isYearly && (
-                  <div className="text-xs text-right" style={{ opacity: 0.6 }}>
-                    <span style={{ textDecoration: 'line-through' }}>${originalYearlyPrice} / year</span>
-                    <span className="ml-2 text-green-600 font-bold">Save 25%!</span>
-                  </div>
-                )}
+                <span className="text-[32px] md:text-[40px] font-extrabold">${displayPrice}</span>
+                <span className="text-sm" style={{ opacity: 0.7 }}> / month</span>
               </div>
             </div>
 
@@ -199,20 +173,10 @@ export default function Home() {
 
             {/* Billing Toggle */}
             <div className="flex items-center justify-center gap-6 mb-8">
-              <span 
-                className={`text-xs transition-opacity duration-200 ${!isYearly ? 'font-bold' : ''}`}
-                style={{ opacity: !isYearly ? 1 : 0.7 }}
-              >
-                Monthly Billing
-              </span>
+              <span className="text-xs" style={{ opacity: 0.7 }}>Monthly Billing</span>
               <BillingToggle isYearly={isYearly} onChange={() => setIsYearly(!isYearly)} />
               <div className="flex items-center gap-2">
-                <span 
-                  className={`text-xs transition-opacity duration-200 ${isYearly ? 'font-bold' : ''}`}
-                  style={{ opacity: isYearly ? 1 : 0.7 }}
-                >
-                  Yearly Billing
-                </span>
+                <span className="text-xs" style={{ opacity: 0.7 }}>Yearly Billing</span>
                 <span className="px-2 py-1 rounded-full text-xs font-extrabold bg-orange-100 text-orange-600">
                   -25%
                 </span>
