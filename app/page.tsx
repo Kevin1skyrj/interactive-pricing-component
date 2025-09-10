@@ -127,7 +127,7 @@ export default function Home() {
     <div className="min-h-screen relative overflow-hidden">
       {/* Background Pattern (responsive, exact look for mobile/desktop) */}
       <div
-        className="absolute inset-x-0 top-0 bg-[url('/images/bg-pattern.svg')] bg-no-repeat bg-top bg-[length:140%_auto] h-[70vw] min-h-[320px] md:bg-[length:100%_auto] md:h-[31.2vw] md:min-h-[220px]"
+        className="absolute inset-x-0 top-0 bg-[url('/images/bg-pattern.svg')] bg-no-repeat bg-top bg-[length:250%_auto] h-[250px] md:bg-[length:100%_auto] md:h-[31.2vw] md:min-h-[220px]"
         aria-hidden
       />
 
